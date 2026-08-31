@@ -1,189 +1,147 @@
-# TAAFT Newsletter Automation
+# TAAFT Newsletter Empire
+
+> A collection of Google Apps Script automations that turn messy newsletter inboxes into structured data and beautiful weekly digests — all running free inside Google's infrastructure.
 
 [![Platform](https://img.shields.io/badge/platform-Google%20Apps%20Script-blue)](https://script.google.com)
 [![License](https://img.shields.io/badge/license-MIT-green)](#license)
-
-> Turn **There's An AI For That** newsletter emails into a structured Google Sheet + a beautiful weekly HTML report — fully automated, zero manual work.
-
----
-
-## 📖 About
-
-**TAAFT Newsletter Automation** is a self-contained Google Apps Script project (one file, ~900 lines) that:
-
-1. **Reads** every email from `hi@mail.theresanaiforthat.com` in your Gmail
-2. **Parses** all content sections using text-marker heuristics — handles *both* the daily issues and the weekly digest format
-3. **Saves** each item as a clean row in a Google Sheet (title, description, link, type, category, country)
-4. **Emails you a styled weekly report** every Sunday with counts, clickable highlights, and a button straight to your spreadsheet
-
-No servers, no API keys, no billing. Everything runs free inside Google's infrastructure using GmailApp + SpreadsheetApp.
-
-### Why I built it
-
-There's An AI For That sends a firehose of AI tools, news, and prompts every week. Skimming emails is lossy — you can't search, filter, or track what you saw. This script turns that firehose into a **queryable database** and a **5-second weekly summary**.
+[![Projects](https://img.shields.io/badge/projects-3_—_TAAFT_+_AI_This_Week_+_Competitor_Watch-informational)](#projects)
 
 ---
 
-## ✨ Features
+## 📖 What this repo is
 
-- 📥 **Dual-format parsing** — daily emails *and* weekly digests, auto-detected per section
-- 🏷️ **Auto-classification** — AI Finds tagged as Learning / Research / Hardware / Business / Policy / Product / Industry
-- 🌍 **Country & category guessing** for featured products (India / USA / EU / ...)
-- 🔁 **Duplicate protection** — processed email IDs stored in a `Processed` tab; re-runs are safe
-- 🧹 **Markdown stripping** — bold links like `_[**Name**](url)_` become proper Title / Summary / Link columns
-- ✂️ **Smart title splitting** — `GoAI assists you with which stocks...` → Title: `GoAI`, Summary: `assists you with...`
-- 📊 **Styled HTML report** — emojis render correctly (numeric entities), top items are clickable links, truncation for long headlines
-- 🔗 **One-click "Open Google Sheet" button** in every report
-- 🧪 **Preview mode** — send yourself a `[TEST]` report without writing to the sheet
-- ⏪ **Backfill** — one command imports up to 100 old newsletters
-
----
-
-## 📋 What gets extracted
-
-| Section in email | Saved to | Type label |
-|---|---|---|
-| Prompt of the Day / Week | `Prompts` | — |
-| Best of Beyond the Feed | `AI Finds` | *(auto-classified)* |
-| This Week's Top AI Developments | `AI Finds` | `Breaking News` |
-| AI Tools of the Week | `AI Finds` | `Tool of the Week` |
-| Notable AI Tools | `AI Finds` | `Notable AI` |
-| Open Source Finds | `AI Finds` | `Open Source` |
-| Interesting AI (featured product) | `Interesting AI` | — |
-
----
-
-## 🗄️ Sheet structure
-
-Create these 5 tabs (or just run `setupSheetHeaders`):
-
-| Tab | Columns |
-|---|---|
-| `Prompts` | Date · Prompt Title · Prompt Description · Prompt URL · Email Subject · Source |
-| `Interesting AI` | Date · Product Name · Description · Website · Category · Indian Startup · Company · Founder · Country · Notes |
-| `AI Finds` | Date · Title · Type · Summary · Link · Notes |
-| `Processed` | Email ID · Date Processed · Subject |
-| `Weekly Reports` | Week Start · Week End · Counts ×3 · Top items ×3 · Summary · Report Sent |
-
----
-
-## 📬 Sample report
+This isn't one script — it's a **reusable engine**:
 
 ```
-📊 Weekly AI Intelligence Report
-2026-08-17 → 2026-08-24
-
-📌 Prompts          9 new this week   Top prompt: Find the Money
-🤖 Interesting AI   9 new this week   Top product: SecondBrain Note  ← clickable
-🔍 AI Finds        39 new this week   Top find: Agentic RAG for Dummies ← clickable
-
-All-time totals: Prompts 137 · Products 123 · AI Finds 407
-
-[ Open Google Sheet → ]
-
-Keep building. 🚀
+SOURCE (email / RSS / web) → PARSE (heuristics) → STRUCTURED STORE (sheet/DB) → DIGEST (HTML email)
 ```
 
-(Received as styled HTML cards; plain-text fallback included.)
+Built once for TAAFT, then cloned and adapted for new products at zero cost. Each project lives in its own folder with one-click deploy instructions.
 
 ---
 
-## 🚀 Setup (5 minutes)
+## 📁 Folder structure
 
-1. **Create the Google Sheet** with the 5 tabs listed above
-2. **Open** [script.google.com](https://script.google.com) → **New project**
-3. **Paste** [`COMPLETE_v5.js`](COMPLETE_v5.js) into the editor
-4. **Set your spreadsheet ID** at the top:
-   ```javascript
-   const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID'; // from your sheet URL
-   ```
-5. The report recipient defaults to your Google account (`Session.getActiveUser()`); change it via:
-   ```javascript
-   const WEEKLY_REPORT_EMAIL = 'you@example.com';
-   ```
-6. Run **once**: `setupSheetHeaders` → fills column headers
-7. Run **once**: `createTriggers` → registers schedules (approve Gmail/Sheets permissions when prompted)
+```
+.
+├── taaft/                           # Project 1 — TAAFT Newsletter Automation (LIVE)
+│   └── COMPLETE_v5.js               # Single-file: parse TAAFT daily+weekly → sheets → HTML report
+│
+├── ai-this-week/                    # Project 2 — AI This Week Digest (LIVE, validating)
+│   ├── collector/                   # 7-file modular collector (one page per source)
+│   │   ├── CONFIG.js                #   Spreadsheet ID + window (ATW_DAYS_BACK)
+│   │   ├── collect-taaft.js         #   TAAFT
+│   │   ├── collect-tldr.js          #   TLDR (all 8 editions) — redirect resolver + Edition column
+│   │   ├── collect-rundown.js       #   The Rundown AI + Tech
+│   │   ├── collect-bensbites.js     #   Ben's Bites (Substack) — text-section parser
+│   │   ├── utils.js                 #   Shared engine (dedupe, junk filters, URL cleaning)
+│   │   └── main.js                  #   Dispatcher + setup + daily trigger
+│   ├── composer/
+│   │   └── composeIssue.js          #   Draft generator: auto-picks 10 recent + dashboard
+│   │                                #   Supports manual Rank overrides + auto-send triggers
+│   ├── landing/
+│   │   └── index.html               #   Deploy-ready landing page
+│   └── docs/
+│       ├── 01-SOURCES.md            #   Which newsletters to subscribe
+│       ├── 02-PRODUCT.md            #   Product definition, pricing, launch plan
+│       └── 03-PAYMENTS-SETUP.md     #   Gumroad / Lemon Squeezy setup (₹0/mo)
+│
+├── competitor-watch/                # Project 3 — Competitor Watch / RivalRadar (scaffolded)
+│   ├── cwCollector.js               #   Multi-client collector + weekly briefing sender
+│   └── 04-OUTREACH.md               #   Design-partner outreach pitches
+│
+└── docs/
+    ├── PROJECT_CONTEXT.md           #   Master handoff — history, decisions, roadmap
+    └── SaaS_IDEAS.md                #   8 SaaS ideas ranked + zero-cost build analysis
+```
 
-Done. First real report arrives Sunday at 9:00.
+---
 
-### Schedules
+## 🚀 Projects
+
+### 1. TAAFT Newsletter Automation — `taaft/COMPLETE_v5.js`
+
+Parses **There's An AI For That** emails (daily issues + weekly digests), extracts every section into a Google Sheet, and emails a styled HTML weekly report every Sunday.
 
 | Trigger | Function | Behavior |
 |---|---|---|
-| Daily 8:00 | `processLatestTAAFT` | Silent — parses new emails into the sheet |
-| Sunday 9:00 | `sendWeeklyReport` | Sends the HTML report |
+| Daily 8am | `processLatestTAAFT` | Silent — parses new emails into sheets |
+| Sunday 9am | `sendWeeklyReport` | Sends HTML report (emojis via entities, clickable top items, sheet button) |
 
-Want everything in one Sunday run instead? See [Single-run variant](#single-run-weekly-only-variant).
+**Helpers:** `backfillAllTAAFT` (import 100 old emails), `previewReportEmail` (test without sheet writes), `cleanMarkdownInSheet` (legacy cleanup).
+
+→ **Setup:** paste `taaft/COMPLETE_v5.js` into a new Apps Script project → set `SPREADSHEET_ID` → run `setupSheetHeaders` → `createTriggers`.
+
+<details>
+<summary>What gets extracted</summary>
+
+- Prompts (Day / Week), AI Finds, Breaking News, Coming in Hot, Notable AIs, Open Source Finds, Interesting AI (featured product + category/country guess)
+
+</details>
 
 ---
 
-## 🛠️ Functions reference
+### 2. AI This Week — `ai-this-week/`
 
-| Function | Purpose |
+A weekly digest that **cross-references 5 AI newsletters** (TLDR, The Rundown, Ben's Bites, TAAFT) and ranks what mattered. Built as a modular, per-source collector (one Apps Script page per company) so each source is tuned independently.
+
+**Key design decisions:**
+
+- **One tab per source** (`TLDR`, `The Rundown AI`, `Ben's Bites`, `TAAFT`) + `Edition` column for TLDR (AI/Tech/Dev/IT/InfoSec/...)
+- **TLDR plain bodies contain no headlines** — resolver follows `links.tldrnewsletter.com` redirects and derives titles from destination URL slugs
+- **Ben's Bites (Substack)** wraps links in `substack.com/redirect` and strips headlines from plain text — text-section parser + redirect resolver recovers them
+- **Junk filtering** is host + title based (`SPONSOR_DOMAINS`, `JUNK_HOSTS`, `FRAGMENT_WORDS`, sponsor text, tracking URLs, social links)
+- **Dedupe** is per-tab via `MsgID|Title|URL` with header-aware column lookup
+
+**Collector — 30-day backfill tested: 413 items (TLDR 331 + Rundown 57 + Ben's Bites 24)**
+
+```
+Daily 7am: collectAllSources  →  8-day window, deduped, per-tab
+On demand: composeIssue        →  auto-picks 10 most recent + dashboard
+                                Put any value in Rank (x/✓/1) to override picks
+Auto:      createWeeklyAutoTrigger (Sun 9am) or create3DayAutoTrigger (every 3d)
+```
+
+→ **Setup:** new Google Sheet → Extensions → Apps Script → create 7 pages (`CONFIG`, `collect-taaft`, `collect-tldr`, `collect-rundown`, `collect-bensbites`, `utils`, `main`) → paste → set `ATW_SPREADSHEET_ID` + `ATW_DAYS_BACK = 8` → `setupATWSheet` → `createTriggersATW`.
+
+**Composer — `composer/composeIssue.js`:**
+
+- Dashboard (last 7 days): per-source counts + TLDR per-edition breakdown
+- 10 stories, numbered, linked, with source/edition meta
+- `Open Google Sheet →` button
+- Draft mode (`[DRAFT]`) vs auto-send mode (final) — `sendAutoDigest` is trigger-called
+
+---
+
+### 3. Competitor Watch (RivalRadar) — `competitor-watch/`
+
+B2B SaaS: track competitors' newsletters/changelogs for clients, deliver a weekly **"what your rivals shipped"** briefing. Reuses the same collector engine in multi-client mode (`Clients` config tab → per-sender routing → per-client branded briefings on Fridays).
+
+- **Status:** scaffolded (`cwCollector.js` + outreach kit `04-OUTREACH.md`), awaiting first design partner
+- **Pricing target:** $99–499/mo
+- **Outreach:** 3 copy-paste pitches (warm LinkedIn, cold, community post) + onboarding checklist
+
+→ **Setup:** same pattern — new sheet → paste `cwCollector.js` → `setupCW` → fill `Clients` tab → `createTriggersCW`.
+
+---
+
+## 🛠️ General setup
+
+All projects need only:
+
+- A Google account + Google Sheet (5 tabs, created by `setup*` functions)
+- [script.google.com](https://script.google.com) → New project → paste → set `SPREADSHEET_ID` → run setup → create triggers → approve Gmail/Sheets permissions
+
+No servers, API keys, or billing. Everything runs free on Google's quota (Apps Script: 6 min/exec, 90 min/day, 100 emails/day via Gmail).
+
+---
+
+## 📚 Docs
+
+| File | What |
 |---|---|
-| `processLatestTAAFT` | Daily run: parse last 2 days of TAAFT emails |
-| `backfillAllTAAFT` | One-time import of up to 100 old newsletters (duplicate-safe) |
-| `sendWeeklyReport` | Build + email the weekly HTML report, log to sheet |
-| `previewReportEmail` | Send a `[TEST]` report — no sheet writes |
-| `createTriggers` | (Re-)register time-based triggers |
-| `setupSheetHeaders` | Write column headers to all tabs |
-| `cleanMarkdownInSheet` | One-time cleanup of legacy rows (markdown blobs → clean columns) |
-| `extractAllFromEmail` | Dispatcher — runs every parser; each finds its own section or skips |
-
-### Re-parse one email
-
-Delete its row from the `Processed` tab → run `processLatestTAAFT`.
-
----
-
-## 🔧 How the parsing works
-
-```
-Gmail thread ──► getPlainBody()
-                    │
-                    ├─ find heading marker ("AI Tools of the Week", "Prompt of the Day", …)
-                    ├─ cut section at next major heading (findMarker)
-                    ├─ grab emoji-prefixed lines (items)
-                    ├─ split name vs description:
-                    │    • markdown bold-link pattern, OR
-                    • verb heuristic ("X assists/runs/builds…" → SECTION_VERBS)
-                    └─ appendRow to sheet
-```
-
-Key design choices:
-
-- **Curly-apostrophe normalization** (`’` → `'`) so markers always match regardless of what TAAFT's mailer emits that week
-- **Emoji detection** uses `\p{Emoji_Presentation}` regex to identify list items
-- **HTML entities for emojis in the email body** (`&#128202;`) so nothing breaks during copy-paste between editors; the subject stays plain text because Gmail mangles emoji in subjects sent via Apps Script
-
-### Customizing
-
-- **New verbs / phrasing changes by TAAFT?** Add words to the `SECTION_VERBS` array
-- **Different sections?** Copy any `extract*` wrapper and point it at a new `startMarker`
-- **Report styling** lives entirely in `buildReportHtml` — inline CSS, easy to theme
-
----
-
-## 💡 Single-run (weekly only) variant
-
-Prefer zero weekday activity? Replace `createTriggers` body with:
-
-```javascript
-ScriptApp.newTrigger('weeklyCollectAndReport')
-  .timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(9).create();
-```
-
-and add:
-
-```javascript
-function weeklyCollectAndReport() {
-  processLatestTAAFT();  // change 'newer_than:2d' to 'newer_than:8d' first
-  backfillAllTAAFT();    // safety net for anything missed
-  sendWeeklyReport();
-}
-```
-
-Trade-off: daily runs double as retries — if parsing fails once during the week, the next day catches it. Single-run loses that safety net.
+| `docs/PROJECT_CONTEXT.md` | Full history, technical lessons (emoji-safe strings, curly-apostrophe normalization, heading-marker parsing, dedupe), environment, roadmap — the handoff doc for any AI/human |
+| `docs/SaaS_IDEAS.md` | 8 SaaS ideas ranked by revenue potential + realistic starting cost (🟢 zero / 🟡 near-zero / 🔴 funded) |
 
 ---
 
@@ -191,11 +149,11 @@ Trade-off: daily runs double as retries — if parsing fails once during the wee
 
 | Symptom | Fix |
 |---|---|
-| Emojis show as `������` | You're on an old version — current code uses HTML entities in the body; re-copy `COMPLETE_v5.js` |
-| Sections missing after a format change | Check Execution log for `⚠️ ... not found`; update the marker strings in the relevant `extract*` function |
-| Duplicate rows | Never delete the `Processed` tab — it powers dedupe. Remove specific rows only to force re-parsing |
-| Report shows stale titles | Titles are read from the sheet; run `cleanMarkdownInSheet` once for legacy rows |
-| Trigger didn't fire | Apps Script → Triggers (clock icon) — confirm both triggers exist and are authorized |
+| Emojis as `������` | Old file — current code uses HTML entities in body + plain-text subjects |
+| `TypeError: Cannot read properties of undefined (reading 'has')` | Collector pages are stale — repaste all 7 `ai-this-week/collector/` pages |
+| TLDR tab empty after clear | `ATW_DAYS_BACK` was `3`; TLDR sends weekly verticals — set to `8` for backfill |
+| Ben's Bites empty | Check `BB_SENDERS = ['bensbites@substack.com']` is set; widen window to `8` |
+| Sections missing after TAAFT format change | Check Execution log for `⚠️ ... not found`; update marker strings in relevant `extract*` |
 
 ---
 
